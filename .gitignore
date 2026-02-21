@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# Virtualenv
+.venv/
+venv/
+ENV/
+
+# OS/editor
+.DS_Store
+.vscode/
+
+# AWS / SAM
+.aws-sam/
+sam_build/
+*.zip
+
+# Env files / secrets
+.env
+.env.*

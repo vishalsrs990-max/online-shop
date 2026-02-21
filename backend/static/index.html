@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title> Vishal Fashion — Online Clothing Shop</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#111a2e;
+      --muted:#91a4c7;
+      --text:#eaf0ff;
+      --accent:#6ee7ff;
+      --accent2:#a78bfa;
+      --danger:#ff6b6b;
+      --ok:#51ff9a;
+      --line: rgba(255,255,255,.08);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(110,231,255,.16), transparent 60%),
+                  radial-gradient(900px 600px at 80% 10%, rgba(167,139,250,.16), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+    }
+    header{
+      padding: 28px 18px 14px;
+      border-bottom: 1px solid var(--line);
+      position: sticky; top:0; backdrop-filter: blur(8px);
+      background: rgba(11,18,32,.65);
+      z-index: 5;
+    }
+    .wrap{max-width:1100px; margin:0 auto;}
+    .top{
+      display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+    }
+    .brand{display:flex; flex-direction:column; gap:2px;}
+    .brand h1{margin:0; font-size:22px; letter-spacing:.3px}
+    .brand p{margin:0; color:var(--muted); font-size:13px}
+    .pill{
+      display:inline-flex; gap:8px; align-items:center;
+      border:1px solid var(--line); padding:8px 10px; border-radius:999px;
+      color: var(--muted); font-size:13px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:14px;
+      padding: 16px 18px 28px;
+    }
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.25);
+    }
+    .card h2{margin:0 0 10px; font-size:16px}
+    .muted{color:var(--muted)}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    input, select{
+      background: rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      color: var(--text);
+      padding:10px 10px;
+      border-radius:12px;
+      outline:none;
+      min-width: 160px;
+    }
+    input::placeholder{color: rgba(234,240,255,.45)}
+    button{
+      background: linear-gradient(90deg, rgba(110,231,255,.95), rgba(167,139,250,.95));
+      border:none;
+      padding:10px 12px;
+      border-radius:12px;
+      color:#08101f;
+      font-weight:700;
+      cursor:pointer;
+    }
+    button.secondary{
+      background: transparent;
+      border:1px solid var(--line);
+      color: var(--text);
+      font-weight:600;
+    }
+    button.danger{
+      background: transparent;
+      border:1px solid rgba(255,107,107,.55);
+      color: var(--danger);
+      font-weight:700;
+    }
+    button:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+    .list{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:10px;
+      margin-top: 10px;
+    }
+    @media (max-width: 700px){ .list{grid-template-columns:1fr} }
+    .item{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:12px;
+      background: rgba(255,255,255,.03);
+      display:flex; gap:12px;
+      align-items:flex-start;
+    }
+    .thumb{
+      width:72px; height:72px; border-radius:14px;
+      background: linear-gradient(135deg, rgba(110,231,255,.25), rgba(167,139,250,.25));
+      border:1px solid var(--line);
+      flex: 0 0 72px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:800; color: rgba(234,240,255,.85);
+    }
+    .item h3{margin:0; font-size:14px}
+    .item p{margin:4px 0 0; font-size:12px; color:var(--muted)}
+    .price{margin-top:6px; font-weight:800}
+    .divider{height:1px; background: var(--line); margin:12px 0}
+    .status{
+      padding:10px; border-radius:14px; border:1px dashed var(--line);
+      background: rgba(255,255,255,.02); color: var(--muted); font-size: 13px;
+      white-space: pre-wrap;
+    }
+    .ok{color: var(--ok)}
+    .bad{color: var(--danger)}
+    .cartRow{display:flex; justify-content:space-between; gap:10px; padding:6px 0; font-size:13px}
+    .small{font-size:12px}
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="wrap top">
+      <div class="brand">
+        <h1>🛍 Vishal Fashion — Online Clothing Shop</h1>
+        <p>Products (DynamoDB) • Orders (DynamoDB) • Queue (SQS) • Public API (Open-Meteo) • Payment (Classmate API)</p>
+      </div>
+      <div class="pill" id="weatherPill">🌦️ Weather: loading…</div>
+    </div>
+  </header>
+
+  <div class="wrap grid">
+    <!-- LEFT: Products -->
+    <section class="card">
+      <h2>🧥 Products</h2>
+      <div class="row">
+        <input id="q" placeholder="Search (name/category)" />
+        <button class="secondary" onclick="loadProducts()">Refresh</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2>➕ Add / Update Product</h2>
+      <div class="row">
+        <input id="pid" placeholder="productId (leave blank to create)" style="min-width:260px" />
+        <input id="name" placeholder="Name (e.g., Denim Jacket)" />
+        <select id="cat">
+          <option value="Jackets">Jackets</option>
+          <option value="T-Shirts">T-Shirts</option>
+          <option value="Dresses">Dresses</option>
+          <option value="Jeans">Jeans</option>
+          <option value="Shoes">Shoes</option>
+        </select>
+        <input id="price" placeholder="Price (e.g., 49.99)" />
+        <input id="stock" placeholder="Stock (e.g., 10)" />
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button onclick="saveProduct()">Save Product</button>
+        <button class="secondary" onclick="clearForm()">Clear</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="row" style="justify-content:space-between">
+        <div class="muted small">Tip: click a product card to auto-fill the form.</div>
+        <div class="muted small">Cart → Payment → Checkout (creates order)</div>
+      </div>
+
+      <div id="products" class="list"></div>
+      <div class="divider"></div>
+      <div class="status" id="productStatus">Ready.</div>
+    </section>
+
+    <!-- RIGHT: Cart + Payment + Orders -->
+    <aside class="card">
+      <h2>🧺 Cart</h2>
+      <div id="cart" class="status">Cart is empty.</div>
+      <div class="divider"></div>
+
+      <h2>💳 Payment (Classmate API)</h2>
+      <div class="row">
+        <input id="mobile" placeholder="Mobile (e.g., +35389001234)" style="min-width:100%" />
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="secondary" id="payBtn" onclick="payNow()">Make Payment</button>
+      </div>
+      <div class="divider"></div>
+      <div class="status" id="paymentStatus">No payment yet.</div>
+
+      <div class="divider"></div>
+
+      <h2>✅ Checkout</h2>
+      <div class="row">
+        <input id="email" placeholder="Email (optional)" style="min-width:100%" />
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="orderBtn" onclick="checkout()" disabled>Place Order</button>
+        <button class="secondary" onclick="clearCart()">Clear Cart</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2>🔎 Check Order Status</h2>
+      <div class="row">
+        <input id="orderId" placeholder="Paste orderId" style="flex:1" />
+        <button class="secondary" onclick="checkOrder()">Check</button>
+      </div>
+      <div class="divider"></div>
+      <div class="status" id="orderStatus">No order checked yet.</div>
+    </aside>
+  </div>
+
+<script>
+  // ✅ IMPORTANT: use SAME ORIGIN / relative URLs (works in Cloud9 proxy)
+  const api = (path) => new URL(path, window.location.href).toString();
+
+  // ✅ Your classmate API endpoint
+  const CLASSMATE_API_URL = "https://3nsivye9u5.execute-api.us-east-1.amazonaws.com/prod/payments";
+
+  let allProducts = [];
+  let cart = [];
+  let paymentOk = false;
+  let lastPaymentRef = null;
+
+  async function loadWeather() {
+    try {
+      const url = "https://api.open-meteo.com/v1/forecast?latitude=53.3498&longitude=-6.2603&current=temperature_2m,weather_code&timezone=Europe%2FDublin";
+      const r = await fetch(url);
+      const j = await r.json();
+      const t = j?.current?.temperature_2m;
+      document.getElementById("weatherPill").textContent = `🌦️ Dublin: ${t}°C — Try Jackets & Hoodies`;
+    } catch (e) {
+      document.getElementById("weatherPill").textContent = "🌦️ Weather unavailable";
+    }
+  }
+
+  function setStatus(el, msg, ok=true){
+    const box = document.getElementById(el);
+    box.textContent = msg;
+    box.classList.toggle("ok", ok);
+    box.classList.toggle("bad", !ok);
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
+
+  function renderProducts(list){
+    const q = (document.getElementById("q").value || "").toLowerCase().trim();
+    const filtered = !q ? list : list.filter(p =>
+      (p.name || "").toLowerCase().includes(q) ||
+      (p.category || "").toLowerCase().includes(q)
+    );
+
+    const root = document.getElementById("products");
+    root.innerHTML = "";
+    filtered.forEach(p => {
+      const el = document.createElement("div");
+      el.className = "item";
+      el.onclick = () => fillForm(p);
+      const initials = (p.name || "Item").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase();
+
+      el.innerHTML = `
+        <div class="thumb">${initials}</div>
+        <div style="flex:1">
+          <h3>${escapeHtml(p.name || "")}</h3>
+          <p>${escapeHtml(p.category || "")} • Stock: ${p.stock ?? 0}</p>
+          <div class="price">€ ${Number(p.price || 0).toFixed(2)}</div>
+          <div class="row" style="margin-top:10px">
+            <button class="secondary" onclick="event.stopPropagation(); addToCart('${p.productId}')">Add to cart</button>
+            <button class="danger" onclick="event.stopPropagation(); deleteProduct('${p.productId}')">Delete</button>
+          </div>
+          <div class="muted small" style="margin-top:6px">ID: ${escapeHtml(p.productId || "")}</div>
+        </div>
+      `;
+      root.appendChild(el);
+    });
+  }
+
+  function fillForm(p){
+    document.getElementById("pid").value = p.productId || "";
+    document.getElementById("name").value = p.name || "";
+    document.getElementById("cat").value = p.category || "Jackets";
+    document.getElementById("price").value = p.price ?? "";
+    document.getElementById("stock").value = p.stock ?? 0;
+  }
+
+  function clearForm(){
+    document.getElementById("pid").value = "";
+    document.getElementById("name").value = "";
+    document.getElementById("cat").value = "Jackets";
+    document.getElementById("price").value = "";
+    document.getElementById("stock").value = "";
+  }
+
+  async function loadProducts(){
+    try{
+      const r = await fetch(api("products"));
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      allProducts = await r.json();
+      renderProducts(allProducts);
+      setStatus("productStatus", `Loaded ${allProducts.length} products.`, true);
+    }catch(e){
+      setStatus("productStatus", `Products load failed: ${e}`, false);
+    }
+  }
+
+  async function saveProduct(){
+    const productId = document.getElementById("pid").value.trim();
+    const name = document.getElementById("name").value.trim();
+    const category = document.getElementById("cat").value;
+    const price = document.getElementById("price").value.trim();
+    const stock = document.getElementById("stock").value.trim();
+
+    if(!name || !category || !price){
+      setStatus("productStatus", "Name, category, and price are required.", false);
+      return;
+    }
+
+    const payload = {
+      name, category,
+      price: Number(price),
+      stock: Number(stock || 0),
+      sizes: ["S","M","L","XL"]
+    };
+
+    try{
+      let r;
+      if(productId){
+        r = await fetch(api(`products/${productId}`), {
+          method:"PUT",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify(payload)
+        });
+      }else{
+        r = await fetch(api("products"), {
+          method:"POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify(payload)
+        });
+      }
+      if(!r.ok) throw new Error(`HTTP ${r.status} ${await r.text()}`);
+      const saved = await r.json();
+      setStatus("productStatus", `Saved ✅ ${saved.productId}`, true);
+      clearForm();
+      await loadProducts();
+    }catch(e){
+      setStatus("productStatus", `Save failed: ${e}`, false);
+    }
+  }
+
+  async function deleteProduct(id){
+    if(!confirm("Delete this product?")) return;
+    try{
+      const r = await fetch(api(`products/${id}`), {method:"DELETE"});
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      setStatus("productStatus", `Deleted ✅ ${id}`, true);
+      await loadProducts();
+    }catch(e){
+      setStatus("productStatus", `Delete failed: ${e}`, false);
+    }
+  }
+
+  function addToCart(productId){
+    const p = allProducts.find(x => x.productId === productId);
+    if(!p) return;
+    const existing = cart.find(x => x.productId === productId);
+    if(existing) existing.qty += 1;
+    else cart.push({productId, name:p.name, price:Number(p.price||0), qty:1});
+    renderCart();
+
+    // Payment must be redone if cart changes
+    paymentOk = false;
+    lastPaymentRef = null;
+    document.getElementById("orderBtn").disabled = true;
+    setStatus("paymentStatus", "Cart changed. Please pay again.", false);
+  }
+
+  function clearCart(){
+    cart = [];
+    renderCart();
+    paymentOk = false;
+    lastPaymentRef = null;
+    document.getElementById("orderBtn").disabled = true;
+    setStatus("paymentStatus", "No payment yet.", true);
+  }
+
+  function renderCart(){
+    const box = document.getElementById("cart");
+    if(cart.length === 0){
+      box.textContent = "Cart is empty.";
+      return;
+    }
+    const total = cart.reduce((s,i)=> s + i.price*i.qty, 0);
+    box.innerHTML = cart.map(i => `
+      <div class="cartRow">
+        <div>${escapeHtml(i.name)} <span class="muted">x${i.qty}</span></div>
+        <div>€ ${(i.price*i.qty).toFixed(2)}</div>
+      </div>
+    `).join("") + `<div class="divider"></div><div class="cartRow"><b>Total</b><b>€ ${total.toFixed(2)}</b></div>`;
+  }
+
+  function cartTotal(){
+    return cart.reduce((s,i)=> s + i.price*i.qty, 0);
+  }
+
+  // ✅ Payment step (Classmate API)
+  async function payNow(){
+    if(cart.length === 0){
+      setStatus("paymentStatus", "Add items to cart first.", false);
+      return;
+    }
+    const mobile = document.getElementById("mobile").value.trim();
+    if(!mobile){
+      setStatus("paymentStatus", "Enter mobile number first (e.g., +35389001234).", false);
+      return;
+    }
+
+    const amount = Number(cartTotal().toFixed(2));
+    const payBtn = document.getElementById("payBtn");
+    payBtn.disabled = true;
+    setStatus("paymentStatus", `Processing payment…\nMobile: ${mobile}\nAmount: € ${amount}`, true);
+
+    try{
+      const r = await fetch(CLASSMATE_API_URL, {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ mobile, amount })
+      });
+
+      const text = await r.text();
+      let j = null;
+      try { j = JSON.parse(text); } catch(_) {}
+
+      if(!r.ok){
+        throw new Error(`HTTP ${r.status}\n${text}`);
+      }
+
+      // ✅ UPDATED SUCCESS RULE (supports SUCCEEDED)
+      const success =
+        j && (j.status === "SUCCEEDED" || j.status === "SUCCESS" || j.status === "OK" || j.ok === true);
+
+      if(!success){
+        throw new Error(`Payment response not marked successful:\n${text}`);
+      }
+
+      paymentOk = true;
+      lastPaymentRef = (j && (j.paymentId || j.txnId || j.reference)) || null;
+
+      document.getElementById("orderBtn").disabled = false;
+      setStatus(
+        "paymentStatus",
+        `Payment SUCCESS ✅\nAmount: € ${amount}\nRef: ${lastPaymentRef || "(not provided by API)"}`,
+        true
+      );
+    }catch(e){
+      paymentOk = false;
+      lastPaymentRef = null;
+      document.getElementById("orderBtn").disabled = true;
+      setStatus("paymentStatus", `Payment failed ❌\n${e}`, false);
+    }finally{
+      payBtn.disabled = false;
+    }
+  }
+
+  // ✅ Checkout only if paymentOk
+  async function checkout(){
+    if(cart.length === 0){
+      document.getElementById("orderStatus").textContent = "Add items to cart first.";
+      return;
+    }
+    if(!paymentOk){
+      document.getElementById("orderStatus").textContent = "Please complete payment first.";
+      return;
+    }
+
+    const email = document.getElementById("email").value.trim();
+    const items = cart.map(i => ({productId:i.productId, qty:i.qty}));
+
+    try{
+      const r = await fetch(api("orders"), {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          items,
+          email,
+          paymentStatus: "SUCCEEDED",
+          paymentRef: lastPaymentRef
+        })
+      });
+      if(!r.ok) throw new Error(`HTTP ${r.status} ${await r.text()}`);
+      const j = await r.json();
+      document.getElementById("orderId").value = j.orderId;
+      document.getElementById("orderStatus").textContent =
+        `Order created ✅\norderId: ${j.orderId}\nstatus: ${j.status}\n\nNow you can check status below.`;
+
+      clearCart();
+      paymentOk = false;
+      lastPaymentRef = null;
+      document.getElementById("orderBtn").disabled = true;
+      setStatus("paymentStatus", "No payment yet.", true);
+    }catch(e){
+      document.getElementById("orderStatus").textContent = `Checkout failed: ${e}`;
+    }
+  }
+
+  async function checkOrder(){
+    const orderId = document.getElementById("orderId").value.trim();
+    if(!orderId){
+      document.getElementById("orderStatus").textContent = "Paste an orderId first.";
+      return;
+    }
+    try{
+      const r = await fetch(api(`orders/${orderId}`));
+      if(!r.ok) throw new Error(`HTTP ${r.status} ${await r.text()}`);
+      const j = await r.json();
+      document.getElementById("orderStatus").textContent = JSON.stringify(j, null, 2);
+    }catch(e){
+      document.getElementById("orderStatus").textContent = `Order fetch failed: ${e}`;
+    }
+  }
+
+  document.getElementById("q").addEventListener("input", () => renderProducts(allProducts));
+
+  // initial load
+  loadWeather();
+  loadProducts();
+  renderCart();
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Online Clothing Shop</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    button { margin: 6px 0; padding: 10px 14px; cursor: pointer; }
+    pre { background:#f4f4f4; padding:10px; border-radius:6px; overflow:auto; }
+    .box { margin-bottom: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+    input { padding: 8px; width: 320px; }
+    label { display:inline-block; width:120px; }
+  </style>
+</head>
+
+<body>
+  <h2>Online Clothing Shop (Frontend)</h2>
+
+  <div class="box">
+    <h3>1) Public Web Service — Open-Meteo Weather</h3>
+    <button onclick="loadWeather()">Load Weather (Dublin)</button>
+    <pre id="weather">Click "Load Weather"</pre>
+  </div>
+
+  <div class="box">
+    <h3>2) Your Web Service — Shopping CRUD API</h3>
+    <button onclick="loadProducts()">Load Products</button>
+    <pre id="products">Click "Load Products"</pre>
+  </div>
+
+  <div class="box">
+    <h3>3) Create Order — Shopping API → SQS (Scalable)</h3>
+    <button onclick="checkout()">Checkout Dummy Order</button>
+    <pre id="order">Click "Checkout Dummy Order"</pre>
+  </div>
+
+  <div class="box">
+    <h3>4) Classmate Web Service — Payment Processing API (+ SMS notification)</h3>
+
+    <div>
+      <label>Mobile:</label>
+      <input id="mobile" value="+353892001234" />
+    </div>
+    <div style="margin-top:8px;">
+      <label>Amount:</label>
+      <input id="amount" value="10" />
+    </div>
+
+    <button style="margin-top:10px;" onclick="makePayment()">Make Payment</button>
+    <pre id="classmate">Click "Make Payment"</pre>
+  </div>
+
+  <div class="box">
+    <h3>5) Check Order Status</h3>
+    <input id="orderIdInput" placeholder="Paste orderId here">
+    <button onclick="checkOrderStatus()">Refresh Order Status</button>
+    <pre id="orderStatus">Paste orderId and click "Refresh Order Status"</pre>
+  </div>
+
+<script>
+  // ✅ Your Cloud9 Flask backend URL (port 5000)
+  const SHOP_API = "https://fa7fcc06f61a4ae1b36da09da7f9a178.vfs.cloud9.us-east-1.amazonaws.com:5000";
+
+  // ✅ Classmate Payments API (given by your classmate)
+  const CLASSMATE_PAYMENTS_URL = "https://3nsivye9u5.execute-api.us-east-1.amazonaws.com/prod/payments";
+
+  // sample productId (your existing one)
+  const SAMPLE_PRODUCT_ID = "6b4abc4e-a6d0-4ccc-ad71-aa3baa845c65";
+  let lastOrderId = null;
+
+  async function loadWeather() {
+    try {
+      const url = "https://api.open-meteo.com/v1/forecast?latitude=53.3498&longitude=-6.2603&current=temperature_2m";
+      const r = await fetch(url);
+      const j = await r.json();
+      document.getElementById("weather").textContent = JSON.stringify(j, null, 2);
+    } catch (e) {
+      document.getElementById("weather").textContent = "Error: " + e;
+    }
+  }
+
+  async function loadProducts() {
+    try {
+      const r = await fetch(`${SHOP_API}/products`);
+      const j = await r.json();
+      document.getElementById("products").textContent = JSON.stringify(j, null, 2);
+    } catch (e) {
+      document.getElementById("products").textContent = "Error: " + e;
+    }
+  }
+
+  async function checkout() {
+    try {
+      const payload = {
+        email: "test@example.com",
+        items: [{ productId: SAMPLE_PRODUCT_ID, qty: 1 }]
+      };
+
+      const r = await fetch(`${SHOP_API}/orders`, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+
+      const j = await r.json();
+      lastOrderId = j.orderId;
+      document.getElementById("orderIdInput").value = lastOrderId;
+      document.getElementById("order").textContent = JSON.stringify(j, null, 2);
+    } catch (e) {
+      document.getElementById("order").textContent = "Error: " + e;
+    }
+  }
+
+  async function makePayment() {
+    try {
+      const mobileNumber = document.getElementById("mobile").value.trim();
+      const amount = parseFloat(document.getElementById("amount").value.trim());
+
+      const payload = { mobileNumber, amount };
+
+      const r = await fetch(CLASSMATE_PAYMENTS_URL, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+
+      const text = await r.text();
+      let j;
+      try { j = JSON.parse(text); } catch { j = { raw: text }; }
+
+      document.getElementById("classmate").textContent =
+        `HTTP ${r.status}\n` + JSON.stringify(j, null, 2);
+
+    } catch (e) {
+      document.getElementById("classmate").textContent = "Error: " + e;
+    }
+  }
+
+  async function checkOrderStatus() {
+    try {
+      const orderId = document.getElementById("orderIdInput").value.trim();
+      if (!orderId) return alert("Paste an orderId first");
+
+      const r = await fetch(`${SHOP_API}/orders/${orderId}`);
+      const j = await r.json();
+      document.getElementById("orderStatus").textContent = JSON.stringify(j, null, 2);
+    } catch (e) {
+      document.getElementById("orderStatus").textContent = "Error: " + e;
+    }
+  }
+</script>
+</body>
+</html>
