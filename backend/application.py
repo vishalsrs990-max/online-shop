@@ -347,7 +347,7 @@ def not_found(e):
 
 if __name__ == "__main__":
     application.run(
-        host="0.0.0.0",
+        host=os.environ.get("FLASK_HOST", "127.0.0.1"),
         port=int(os.environ.get("PORT", "8080")),
-        debug=True
+        debug=os.environ.get("FLASK_DEBUG", "true").lower() == "true"
     )
