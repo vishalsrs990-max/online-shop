@@ -1,4 +1,4 @@
-name: CI-CD to Elastic Beanstalk
+name: Build and Deploy to Elastic Beanstalk
 
 on:
   workflow_dispatch:
