@@ -1,4 +1,4 @@
-name: Deploy to Elastic Beanstalk
+name: CI-CD to Elastic Beanstalk
 
 on:
   workflow_dispatch:
@@ -24,18 +24,23 @@ jobs:
           aws sts get-caller-identity
           aws --version
 
-      - name: Create deployment bundle from backend folder
+      - name: CI - Python syntax check
         run: |
+          python3 -m compileall backend
+
+      - name: Build Elastic Beanstalk source bundle
+        run: |
+          rm -f deploy.zip
           cd backend
           zip -r ../deploy.zip . \
-            -x ".venv/*" "__pycache__/*" "*.pyc"
+            -x ".venv/*" "__pycache__/*" "*.pyc" ".git/*" ".elasticbeanstalk/*"
 
-      - name: Upload and deploy to Elastic Beanstalk
+      - name: CD - Upload bundle and deploy to Elastic Beanstalk
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
 
-          VERSION_LABEL="gh-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          VERSION_LABEL="gh-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${GITHUB_SHA::7}"
 
           BUCKET=$(aws elasticbeanstalk create-storage-location \
             --region "$AWS_REGION" \
@@ -43,6 +48,10 @@ jobs:
             --output text)
 
           KEY="${EB_APP_NAME}/${VERSION_LABEL}.zip"
+
+          echo "Deploying version: $VERSION_LABEL"
+          echo "Using bucket: $BUCKET"
+          echo "Using key: $KEY"
 
           aws s3 cp deploy.zip "s3://${BUCKET}/${KEY}" --region "$AWS_REGION"
 
@@ -56,3 +65,9 @@ jobs:
             --environment-name "$EB_ENV_NAME" \
             --version-label "$VERSION_LABEL" \
             --region "$AWS_REGION"
+
+          aws elasticbeanstalk wait environment-updated \
+            --environment-name "$EB_ENV_NAME" \
+            --region "$AWS_REGION"
+
+          echo "Deployment completed successfully"
