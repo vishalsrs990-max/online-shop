@@ -35,6 +35,16 @@ jobs:
           zip -r ../deploy.zip . \
             -x ".venv/*" "__pycache__/*" "*.pyc" ".git/*" ".elasticbeanstalk/*"
 
+      - name: Wait for Elastic Beanstalk environment to be Ready
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Waiting for environment to become Ready..."
+          aws elasticbeanstalk wait environment-updated \
+            --environment-names "$EB_ENV_NAME" \
+            --region "$AWS_REGION"
+          echo "Environment is Ready"
+
       - name: CD - Upload bundle and deploy to Elastic Beanstalk
         shell: bash
         run: |
@@ -67,7 +77,7 @@ jobs:
             --region "$AWS_REGION"
 
           aws elasticbeanstalk wait environment-updated \
-            --environment-name "$EB_ENV_NAME" \
+            --environment-names "$EB_ENV_NAME" \
             --region "$AWS_REGION"
 
           echo "Deployment completed successfully"
