@@ -1,0 +1,58 @@
+name: Deploy to Elastic Beanstalk
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  EB_APP_NAME: backend
+  EB_ENV_NAME: online-shopping-env
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, x64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify AWS identity
+        run: |
+          aws sts get-caller-identity
+          aws --version
+
+      - name: Create deployment bundle from backend folder
+        run: |
+          cd backend
+          zip -r ../deploy.zip . \
+            -x ".venv/*" "__pycache__/*" "*.pyc"
+
+      - name: Upload and deploy to Elastic Beanstalk
+        shell: bash
+        run: |
+          set -e
+
+          VERSION_LABEL="gh-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+
+          BUCKET=$(aws elasticbeanstalk create-storage-location \
+            --region "$AWS_REGION" \
+            --query S3Bucket \
+            --output text)
+
+          KEY="${EB_APP_NAME}/${VERSION_LABEL}.zip"
+
+          aws s3 cp deploy.zip "s3://${BUCKET}/${KEY}" --region "$AWS_REGION"
+
+          aws elasticbeanstalk create-application-version \
+            --application-name "$EB_APP_NAME" \
+            --version-label "$VERSION_LABEL" \
+            --source-bundle S3Bucket="$BUCKET",S3Key="$KEY" \
+            --region "$AWS_REGION"
+
+          aws elasticbeanstalk update-environment \
+            --environment-name "$EB_ENV_NAME" \
+            --version-label "$VERSION_LABEL" \
+            --region "$AWS_REGION"

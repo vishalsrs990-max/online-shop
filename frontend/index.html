@@ -7,9 +7,9 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     button { margin: 6px 0; padding: 10px 14px; cursor: pointer; }
-    pre { background:#f4f4f4; padding:10px; border-radius:6px; overflow:auto; }
+    pre { background:#f4f4f4; padding:10px; border-radius:6px; overflow:auto; white-space:pre-wrap; }
     .box { margin-bottom: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
-    input { padding: 8px; width: 320px; }
+    input { padding: 8px; width: 320px; max-width: 100%; }
     label { display:inline-block; width:120px; }
   </style>
 </head>
@@ -36,15 +36,21 @@
   </div>
 
   <div class="box">
-    <h3>4) Classmate Web Service — Payment Processing API (+ SMS notification)</h3>
+    <h3>4) Classmate Web Service — Payment Processing (Redirect URL)</h3>
 
     <div>
       <label>Mobile:</label>
       <input id="mobile" value="+353892001234" />
     </div>
+
     <div style="margin-top:8px;">
       <label>Amount:</label>
       <input id="amount" value="10" />
+    </div>
+
+    <div style="margin-top:8px;">
+      <label>Redirect URL:</label>
+      <input id="redirectUrl" />
     </div>
 
     <button style="margin-top:10px;" onclick="makePayment()">Make Payment</button>
@@ -59,15 +65,54 @@
   </div>
 
 <script>
-  // ✅ Your Cloud9 Flask backend URL (port 5000)
   const SHOP_API = "https://fa7fcc06f61a4ae1b36da09da7f9a178.vfs.cloud9.us-east-1.amazonaws.com:5000";
-
-  // ✅ Classmate Payments API (given by your classmate)
-  const CLASSMATE_PAYMENTS_URL = "https://3nsivye9u5.execute-api.us-east-1.amazonaws.com/prod/payments";
-
-  // sample productId (your existing one)
+  const CLASSMATE_PAYMENT_BASE = "https://pay.cloudssfdc.com/pay";
   const SAMPLE_PRODUCT_ID = "6b4abc4e-a6d0-4ccc-ad71-aa3baa845c65";
+
+  const STORE = {
+    MOBILE: "demo_mobile",
+    AMOUNT: "demo_amount",
+    REDIRECT: "demo_redirect",
+    LAST_ORDER_ID: "demo_last_order_id"
+  };
+
   let lastOrderId = null;
+
+  function buildDefaultRedirectUrl(){
+    const url = new URL(window.location.href);
+    url.search = "";
+    url.hash = "";
+    url.searchParams.set("paid", "1");
+    return url.toString();
+  }
+
+  function restoreDemoState(){
+    document.getElementById("mobile").value =
+      localStorage.getItem(STORE.MOBILE) || "+353892001234";
+
+    document.getElementById("amount").value =
+      localStorage.getItem(STORE.AMOUNT) || "10";
+
+    document.getElementById("redirectUrl").value =
+      localStorage.getItem(STORE.REDIRECT) || buildDefaultRedirectUrl();
+
+    const savedOrderId = localStorage.getItem(STORE.LAST_ORDER_ID) || "";
+    if(savedOrderId){
+      document.getElementById("orderIdInput").value = savedOrderId;
+      lastOrderId = savedOrderId;
+    }
+  }
+
+  function handlePaymentReturn(){
+    const url = new URL(window.location.href);
+    if(url.searchParams.get("paid") === "1"){
+      document.getElementById("classmate").textContent =
+        "Payment return received successfully ✅\nYou were redirected back to this page.";
+
+      url.searchParams.delete("paid");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }
 
   async function loadWeather() {
     try {
@@ -105,6 +150,7 @@
 
       const j = await r.json();
       lastOrderId = j.orderId;
+      localStorage.setItem(STORE.LAST_ORDER_ID, lastOrderId);
       document.getElementById("orderIdInput").value = lastOrderId;
       document.getElementById("order").textContent = JSON.stringify(j, null, 2);
     } catch (e) {
@@ -112,26 +158,32 @@
     }
   }
 
-  async function makePayment() {
+  function makePayment() {
     try {
-      const mobileNumber = document.getElementById("mobile").value.trim();
-      const amount = parseFloat(document.getElementById("amount").value.trim());
+      const mobile = document.getElementById("mobile").value.trim();
+      const amountRaw = document.getElementById("amount").value.trim();
+      const redirect = document.getElementById("redirectUrl").value.trim() || buildDefaultRedirectUrl();
 
-      const payload = { mobileNumber, amount };
+      if (!mobile) return alert("Mobile is required");
+      if (!amountRaw) return alert("Amount is required");
 
-      const r = await fetch(CLASSMATE_PAYMENTS_URL, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify(payload)
-      });
+      const amount = parseFloat(amountRaw);
+      if (Number.isNaN(amount) || amount <= 0) return alert("Enter a valid amount");
 
-      const text = await r.text();
-      let j;
-      try { j = JSON.parse(text); } catch { j = { raw: text }; }
+      localStorage.setItem(STORE.MOBILE, mobile);
+      localStorage.setItem(STORE.AMOUNT, amount.toString());
+      localStorage.setItem(STORE.REDIRECT, redirect);
+
+      const payUrl =
+        `${CLASSMATE_PAYMENT_BASE}?` +
+        `mobile=${encodeURIComponent(mobile)}` +
+        `&amount=${encodeURIComponent(amount.toString())}` +
+        `&redirect=${encodeURIComponent(redirect)}`;
 
       document.getElementById("classmate").textContent =
-        `HTTP ${r.status}\n` + JSON.stringify(j, null, 2);
+        "Redirecting to payment page...\n" + payUrl;
 
+      window.location.href = payUrl;
     } catch (e) {
       document.getElementById("classmate").textContent = "Error: " + e;
     }
@@ -145,10 +197,26 @@
       const r = await fetch(`${SHOP_API}/orders/${orderId}`);
       const j = await r.json();
       document.getElementById("orderStatus").textContent = JSON.stringify(j, null, 2);
+      localStorage.setItem(STORE.LAST_ORDER_ID, orderId);
     } catch (e) {
       document.getElementById("orderStatus").textContent = "Error: " + e;
     }
   }
+
+  document.getElementById("mobile").addEventListener("input", (e) => {
+    localStorage.setItem(STORE.MOBILE, e.target.value);
+  });
+
+  document.getElementById("amount").addEventListener("input", (e) => {
+    localStorage.setItem(STORE.AMOUNT, e.target.value);
+  });
+
+  document.getElementById("redirectUrl").addEventListener("input", (e) => {
+    localStorage.setItem(STORE.REDIRECT, e.target.value);
+  });
+
+  restoreDemoState();
+  handlePaymentReturn();
 </script>
 </body>
 </html>

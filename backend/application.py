@@ -1,44 +1,40 @@
-import os, uuid, time, json
+import os
+import uuid
+import time
+import json
 from decimal import Decimal
+from urllib.request import urlopen
+from urllib.parse import urlencode
+from urllib.error import URLError, HTTPError
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import boto3
+from botocore.exceptions import ClientError
 
-# -------------------------------------------------------
-# App setup
-# -------------------------------------------------------
-# Serve static files from: backend/static/
-# and make them available at root path /
-app = Flask(__name__, static_folder="static", static_url_path="")
-CORS(app)
+application = Flask(__name__, static_folder="static", static_url_path="/static")
+CORS(application)
 
-# -------------------------------------------------------
-# AWS clients/resources (force region to avoid surprises)
-# -------------------------------------------------------
-AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
+AWS_REGION = os.environ.get("AWS_REGION", "us-east-1").strip()
+PRODUCTS_TABLE = os.environ.get("PRODUCTS_TABLE", "products").strip()
+ORDERS_TABLE = os.environ.get("ORDERS_TABLE", "Orders").strip()
+QUEUE_URL = os.environ.get("QUEUE_URL", "").strip()
+QUEUE_NAME = os.environ.get("QUEUE_NAME", "").strip()
+ASSETS_BUCKET = os.environ.get("ASSETS_BUCKET", "").strip()
+
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 sqs = boto3.client("sqs", region_name=AWS_REGION)
-
-# -------------------------------------------------------
-# Config (match your actual table names)
-# Your AWS CLI shows: tables = ["Orders", "products"]
-# -------------------------------------------------------
-PRODUCTS_TABLE = os.environ.get("PRODUCTS_TABLE", "products")  # ✅ lowercase
-ORDERS_TABLE = os.environ.get("ORDERS_TABLE", "Orders")        # ✅ capital O
-QUEUE_URL = os.environ.get("QUEUE_URL", "")
-ASSETS_BUCKET = os.environ.get("ASSETS_BUCKET", "")  # optional
 
 products_tbl = dynamodb.Table(PRODUCTS_TABLE)
 orders_tbl = dynamodb.Table(ORDERS_TABLE)
 
-# Helpful logs in Cloud9 terminal
 print("AWS_REGION =", AWS_REGION)
 print("PRODUCTS_TABLE =", PRODUCTS_TABLE)
 print("ORDERS_TABLE =", ORDERS_TABLE)
-print("QUEUE_URL =", QUEUE_URL)
+print("QUEUE_URL =", QUEUE_URL if QUEUE_URL else "(empty)")
+print("QUEUE_NAME =", QUEUE_NAME if QUEUE_NAME else "(empty)")
 
-# ✅ Convert Decimal -> float so jsonify works
+
 def to_json_safe(obj):
     if isinstance(obj, list):
         return [to_json_safe(x) for x in obj]
@@ -48,29 +44,138 @@ def to_json_safe(obj):
         return float(obj)
     return obj
 
-# -------------------------------------------------------
-# Home page (serves backend/static/index.html)
-# -------------------------------------------------------
-@app.get("/")
+
+def is_valid_sqs_queue_url(url: str) -> bool:
+    if not url:
+        return False
+    parts = url.split("/")
+    return (
+        url.startswith("https://sqs.")
+        and ".amazonaws.com/" in url
+        and len(parts) >= 5
+        and parts[3] != ""
+        and parts[4] != ""
+    )
+
+
+def resolve_queue_url():
+    global QUEUE_URL
+
+    if is_valid_sqs_queue_url(QUEUE_URL):
+        return QUEUE_URL
+
+    if QUEUE_URL and not is_valid_sqs_queue_url(QUEUE_URL):
+        print("⚠️ QUEUE_URL looks invalid:", QUEUE_URL)
+
+    if QUEUE_NAME:
+        try:
+            resp = sqs.get_queue_url(QueueName=QUEUE_NAME)
+            QUEUE_URL = resp["QueueUrl"]
+            print("✅ Resolved QUEUE_URL from QUEUE_NAME:", QUEUE_URL)
+            return QUEUE_URL
+        except Exception as e:
+            print("❌ Failed to resolve QUEUE_NAME to QueueUrl:", str(e))
+            return ""
+
+    return ""
+
+
+def send_order_to_sqs(order):
+    queue_url = resolve_queue_url()
+
+    if not queue_url:
+        print("⚠️ No valid QUEUE_URL available → skipping SQS send")
+        return False
+
+    try:
+        message_body = {
+            "orderId": order["orderId"],
+            "items": order.get("items", []),
+            "email": order.get("email", ""),
+            "paymentStatus": order.get("paymentStatus", ""),
+            "paymentRef": order.get("paymentRef", ""),
+            "createdAt": order.get("createdAt")
+        }
+
+        params = {
+            "QueueUrl": queue_url,
+            "MessageBody": json.dumps(message_body)
+        }
+
+        if queue_url.endswith(".fifo"):
+            params["MessageGroupId"] = "orders"
+            params["MessageDeduplicationId"] = order["orderId"]
+
+        resp = sqs.send_message(**params)
+        print("✅ SQS message sent:", resp.get("MessageId"))
+        return True
+
+    except ClientError as e:
+        print("❌ SQS send failed:", e.response["Error"]["Message"])
+        return False
+    except Exception as e:
+        print("❌ SQS send failed:", str(e))
+        return False
+
+
+@application.get("/")
 def home():
-    return app.send_static_file("index.html")
+    return application.send_static_file("index.html")
 
-# -------------------------------------------------------
-# Health check
-# -------------------------------------------------------
-@app.get("/health")
+
+@application.get("/health")
 def health():
-    return jsonify({"status": "ok"})
+    return jsonify({
+        "status": "ok",
+        "region": AWS_REGION,
+        "productsTable": PRODUCTS_TABLE,
+        "ordersTable": ORDERS_TABLE,
+        "queueConfigured": bool(resolve_queue_url())
+    })
 
-# -------------------------------------------------------
-# PRODUCTS CRUD
-# -------------------------------------------------------
-@app.get("/products")
+
+# -------------------------------
+# Public API: Open-Meteo Weather
+# -------------------------------
+@application.get("/weather")
+def weather():
+    """
+    Example:
+    /weather
+    /weather?latitude=53.3498&longitude=-6.2603
+    """
+
+    latitude = request.args.get("latitude", "53.3498").strip()   # Dublin
+    longitude = request.args.get("longitude", "-6.2603").strip() # Dublin
+
+    params = {
+        "latitude": latitude,
+        "longitude": longitude,
+        "current": "temperature_2m,wind_speed_10m,weather_code",
+        "timezone": "auto"
+    }
+
+    url = f"https://api.open-meteo.com/v1/forecast?{urlencode(params)}"
+
+    try:
+        with urlopen(url, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        return jsonify(data), 200
+    except HTTPError as e:
+        return jsonify({"message": f"Weather API HTTP error: {e.code}"}), 502
+    except URLError as e:
+        return jsonify({"message": f"Weather API URL error: {e.reason}"}), 502
+    except Exception as e:
+        return jsonify({"message": f"Weather API failed: {str(e)}"}), 500
+
+
+@application.get("/products")
 def list_products():
     resp = products_tbl.scan()
     return jsonify(to_json_safe(resp.get("Items", [])))
 
-@app.get("/products/<product_id>")
+
+@application.get("/products/<product_id>")
 def get_product(product_id):
     resp = products_tbl.get_item(Key={"productId": product_id})
     item = resp.get("Item")
@@ -78,9 +183,11 @@ def get_product(product_id):
         return jsonify({"message": "Product not found"}), 404
     return jsonify(to_json_safe(item))
 
-@app.post("/products")
+
+@application.post("/products")
 def create_product():
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
+
     required = ["name", "category", "price"]
     for r in required:
         if r not in data:
@@ -91,7 +198,7 @@ def create_product():
         "productId": product_id,
         "name": data["name"],
         "category": data["category"],
-        "price": Decimal(str(data["price"])),  # DynamoDB numeric
+        "price": Decimal(str(data["price"])),
         "sizes": data.get("sizes", []),
         "stock": int(data.get("stock", 0)),
         "imageUrl": data.get("imageUrl", ""),
@@ -101,9 +208,10 @@ def create_product():
     products_tbl.put_item(Item=item)
     return jsonify(to_json_safe(item)), 201
 
-@app.put("/products/<product_id>")
+
+@application.put("/products/<product_id>")
 def update_product(product_id):
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
 
     resp = products_tbl.get_item(Key={"productId": product_id})
     item = resp.get("Item")
@@ -122,21 +230,19 @@ def update_product(product_id):
     products_tbl.put_item(Item=item)
     return jsonify(to_json_safe(item))
 
-@app.delete("/products/<product_id>")
+
+@application.delete("/products/<product_id>")
 def delete_product(product_id):
     products_tbl.delete_item(Key={"productId": product_id})
     return jsonify({"message": "Deleted"}), 200
 
-# -------------------------------------------------------
-# ORDERS
-# -------------------------------------------------------
-@app.post("/orders")
+
+@application.post("/orders")
 def create_order():
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
+
     items = data.get("items", [])
     customer_email = data.get("email", "")
-
-    # Optional payment fields from frontend
     payment_status = data.get("paymentStatus", "")
     payment_ref = data.get("paymentRef", "")
 
@@ -156,17 +262,16 @@ def create_order():
 
     orders_tbl.put_item(Item=order)
 
-    # Push job to SQS (worker will confirm later)
-    if QUEUE_URL:
-        sqs.send_message(
-            QueueUrl=QUEUE_URL,
-            MessageBody=json.dumps({"orderId": order_id})
-        )
+    sqs_sent = send_order_to_sqs(order)
 
-    # ✅ return the SAME status you stored
-    return jsonify({"orderId": order_id, "status": "PENDING"}), 201
+    return jsonify({
+        "orderId": order_id,
+        "status": "PENDING",
+        "sqsSent": sqs_sent
+    }), 201
 
-@app.get("/orders/<order_id>")
+
+@application.get("/orders/<order_id>")
 def get_order(order_id):
     resp = orders_tbl.get_item(Key={"orderId": order_id})
     item = resp.get("Item")
@@ -174,15 +279,11 @@ def get_order(order_id):
         return jsonify({"message": "Order not found"}), 404
     return jsonify(to_json_safe(item)), 200
 
-# -------------------------------------------------------
-# Optional: nice error if route not found
-# -------------------------------------------------------
-@app.errorhandler(404)
+
+@application.errorhandler(404)
 def not_found(e):
     return jsonify({"message": "Route not found"}), 404
 
-# -------------------------------------------------------
-# Local run
-# -------------------------------------------------------
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8080")), debug=True)
+    application.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8080")), debug=True)

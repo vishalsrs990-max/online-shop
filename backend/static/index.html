@@ -3,134 +3,63 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title> Vishal Fashion — Online Clothing Shop</title>
+  <title>Vishal Fashion — Online Clothing Shop</title>
+
   <style>
-    :root{
-      --bg:#0b1220;
-      --card:#111a2e;
-      --muted:#91a4c7;
-      --text:#eaf0ff;
-      --accent:#6ee7ff;
-      --accent2:#a78bfa;
-      --danger:#ff6b6b;
-      --ok:#51ff9a;
-      --line: rgba(255,255,255,.08);
-    }
     *{box-sizing:border-box}
-    body{
-      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background: radial-gradient(1200px 600px at 20% 0%, rgba(110,231,255,.16), transparent 60%),
-                  radial-gradient(900px 600px at 80% 10%, rgba(167,139,250,.16), transparent 60%),
-                  var(--bg);
-      color: var(--text);
+    body{margin:0;font-family:Arial,sans-serif;background:#fff;color:#111}
+    header{padding:16px 18px;border-bottom:1px solid #ddd;background:#fff;position:sticky;top:0;z-index:5}
+    .wrap{max-width:1100px;margin:0 auto}
+    .top{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .brand h1{margin:0;font-size:20px}
+
+    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;padding:16px 18px 28px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+
+    .card{background:#fafafa;border:1px solid #ddd;border-radius:10px;padding:14px}
+    .card h2{margin:0 0 10px;font-size:16px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+    input,select{
+      background:#fff;border:1px solid #ccc;color:#111;
+      padding:10px;border-radius:8px;outline:none;min-width:160px
     }
-    header{
-      padding: 28px 18px 14px;
-      border-bottom: 1px solid var(--line);
-      position: sticky; top:0; backdrop-filter: blur(8px);
-      background: rgba(11,18,32,.65);
-      z-index: 5;
-    }
-    .wrap{max-width:1100px; margin:0 auto;}
-    .top{
-      display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap;
-    }
-    .brand{display:flex; flex-direction:column; gap:2px;}
-    .brand h1{margin:0; font-size:22px; letter-spacing:.3px}
-    .brand p{margin:0; color:var(--muted); font-size:13px}
-    .pill{
-      display:inline-flex; gap:8px; align-items:center;
-      border:1px solid var(--line); padding:8px 10px; border-radius:999px;
-      color: var(--muted); font-size:13px;
-    }
-    .grid{
-      display:grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap:14px;
-      padding: 16px 18px 28px;
-    }
-    @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-      border:1px solid var(--line);
-      border-radius:18px;
-      padding:16px;
-      box-shadow: 0 12px 30px rgba(0,0,0,.25);
-    }
-    .card h2{margin:0 0 10px; font-size:16px}
-    .muted{color:var(--muted)}
-    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-    input, select{
-      background: rgba(255,255,255,.04);
-      border:1px solid var(--line);
-      color: var(--text);
-      padding:10px 10px;
-      border-radius:12px;
-      outline:none;
-      min-width: 160px;
-    }
-    input::placeholder{color: rgba(234,240,255,.45)}
+    input::placeholder{color:#888}
+
     button{
-      background: linear-gradient(90deg, rgba(110,231,255,.95), rgba(167,139,250,.95));
-      border:none;
-      padding:10px 12px;
-      border-radius:12px;
-      color:#08101f;
-      font-weight:700;
-      cursor:pointer;
+      background:#111;border:1px solid #111;padding:10px 12px;border-radius:8px;
+      color:#fff;font-weight:700;cursor:pointer
     }
-    button.secondary{
-      background: transparent;
-      border:1px solid var(--line);
-      color: var(--text);
-      font-weight:600;
-    }
-    button.danger{
-      background: transparent;
-      border:1px solid rgba(255,107,107,.55);
-      color: var(--danger);
-      font-weight:700;
-    }
-    button:disabled{
-      opacity:.55;
-      cursor:not-allowed;
-    }
-    .list{
-      display:grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap:10px;
-      margin-top: 10px;
-    }
-    @media (max-width: 700px){ .list{grid-template-columns:1fr} }
+    button.secondary{background:#fff;border:1px solid #333;color:#111;font-weight:700}
+    button.danger{background:#fff;border:1px solid #c62828;color:#c62828;font-weight:700}
+    button:disabled{opacity:.55;cursor:not-allowed}
+
+    .list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+    @media (max-width:700px){.list{grid-template-columns:1fr}}
+
     .item{
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:12px;
-      background: rgba(255,255,255,.03);
-      display:flex; gap:12px;
-      align-items:flex-start;
+      border:1px solid #ddd;border-radius:10px;padding:12px;background:#fff;
+      display:flex;gap:12px;align-items:flex-start
     }
     .thumb{
-      width:72px; height:72px; border-radius:14px;
-      background: linear-gradient(135deg, rgba(110,231,255,.25), rgba(167,139,250,.25));
-      border:1px solid var(--line);
-      flex: 0 0 72px;
-      display:flex; align-items:center; justify-content:center;
-      font-weight:800; color: rgba(234,240,255,.85);
+      width:64px;height:64px;border-radius:10px;background:#f0f0f0;border:1px solid #ddd;
+      flex:0 0 64px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#333
     }
-    .item h3{margin:0; font-size:14px}
-    .item p{margin:4px 0 0; font-size:12px; color:var(--muted)}
-    .price{margin-top:6px; font-weight:800}
-    .divider{height:1px; background: var(--line); margin:12px 0}
+    .item h3{margin:0;font-size:14px}
+    .item p{margin:4px 0 0;font-size:12px;color:#555}
+    .price{margin-top:6px;font-weight:800}
+
+    .divider{height:1px;background:#ddd;margin:12px 0}
+
     .status{
-      padding:10px; border-radius:14px; border:1px dashed var(--line);
-      background: rgba(255,255,255,.02); color: var(--muted); font-size: 13px;
-      white-space: pre-wrap;
+      padding:10px;border-radius:8px;border:1px dashed #bbb;background:#fff;color:#333;
+      font-size:13px;white-space:pre-wrap
     }
-    .ok{color: var(--ok)}
-    .bad{color: var(--danger)}
-    .cartRow{display:flex; justify-content:space-between; gap:10px; padding:6px 0; font-size:13px}
+    .ok{color:#0a7a2f}
+    .bad{color:#c62828}
+    .cartRow{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:13px}
     .small{font-size:12px}
+    .muted{color:#666}
   </style>
 </head>
 
@@ -138,27 +67,24 @@
   <header>
     <div class="wrap top">
       <div class="brand">
-        <h1>🛍 Vishal Fashion — Online Clothing Shop</h1>
-        <p>Products (DynamoDB) • Orders (DynamoDB) • Queue (SQS) • Public API (Open-Meteo) • Payment (Classmate API)</p>
+        <h1>Vishal Fashion — Online Clothing Shop</h1>
       </div>
-      <div class="pill" id="weatherPill">🌦️ Weather: loading…</div>
     </div>
   </header>
 
   <div class="wrap grid">
-    <!-- LEFT: Products -->
     <section class="card">
-      <h2>🧥 Products</h2>
+      <h2>Products</h2>
       <div class="row">
         <input id="q" placeholder="Search (name/category)" />
-        <button class="secondary" onclick="loadProducts()">Refresh</button>
       </div>
 
       <div class="divider"></div>
 
-      <h2>➕ Add / Update Product</h2>
+      <h2>Add / Update Product</h2>
+      <input id="pid" type="hidden" />
+
       <div class="row">
-        <input id="pid" placeholder="productId (leave blank to create)" style="min-width:260px" />
         <input id="name" placeholder="Name (e.g., Denim Jacket)" />
         <select id="cat">
           <option value="Jackets">Jackets</option>
@@ -179,7 +105,7 @@
 
       <div class="row" style="justify-content:space-between">
         <div class="muted small">Tip: click a product card to auto-fill the form.</div>
-        <div class="muted small">Cart → Payment → Checkout (creates order)</div>
+        <div class="muted small">Cart → Payment → Checkout</div>
       </div>
 
       <div id="products" class="list"></div>
@@ -187,25 +113,35 @@
       <div class="status" id="productStatus">Ready.</div>
     </section>
 
-    <!-- RIGHT: Cart + Payment + Orders -->
     <aside class="card">
-      <h2>🧺 Cart</h2>
-      <div id="cart" class="status">Cart is empty.</div>
+      <h2>Weather (Public API)</h2>
+      <div class="row">
+        <button class="secondary" onclick="loadWeather()">Load Dublin Weather</button>
+      </div>
+      <div class="divider"></div>
+      <div class="status" id="weatherStatus">Click "Load Dublin Weather".</div>
+
       <div class="divider"></div>
 
-      <h2>💳 Payment (Classmate API)</h2>
+      <h2>Cart</h2>
+      <div id="cart" class="status">Cart is empty.</div>
+
+      <div class="divider"></div>
+
+      <h2>Payment</h2>
       <div class="row">
         <input id="mobile" placeholder="Mobile (e.g., +35389001234)" style="min-width:100%" />
       </div>
       <div class="row" style="margin-top:10px">
         <button class="secondary" id="payBtn" onclick="payNow()">Make Payment</button>
+        <button class="secondary" id="confirmPayBtn" onclick="confirmPaymentDone()" disabled>I Completed Payment</button>
       </div>
       <div class="divider"></div>
       <div class="status" id="paymentStatus">No payment yet.</div>
 
       <div class="divider"></div>
 
-      <h2>✅ Checkout</h2>
+      <h2>Checkout</h2>
       <div class="row">
         <input id="email" placeholder="Email (optional)" style="min-width:100%" />
       </div>
@@ -216,7 +152,7 @@
 
       <div class="divider"></div>
 
-      <h2>🔎 Check Order Status</h2>
+      <h2>Check Order Status</h2>
       <div class="row">
         <input id="orderId" placeholder="Paste orderId" style="flex:1" />
         <button class="secondary" onclick="checkOrder()">Check</button>
@@ -227,28 +163,48 @@
   </div>
 
 <script>
-  // ✅ IMPORTANT: use SAME ORIGIN / relative URLs (works in Cloud9 proxy)
-  const api = (path) => new URL(path, window.location.href).toString();
+  let API_BASE = window.location.origin;
 
-  // ✅ Your classmate API endpoint
-  const CLASSMATE_API_URL = "https://3nsivye9u5.execute-api.us-east-1.amazonaws.com/prod/payments";
+  const CLASSMATE_PAYMENT_BASE = "https://pay.cloudssfdc.com/pay";
+
+  const STORE = {
+    CART: "vf_cart",
+    PAYMENT_OK: "vf_payment_ok",
+    PAYMENT_REF: "vf_payment_ref",
+    PAYMENT_AMOUNT: "vf_payment_amount",
+    PAYMENT_PENDING: "vf_payment_pending",
+    PAYMENT_CART_SNAPSHOT: "vf_payment_cart_snapshot",
+    LAST_ORDER_ID: "vf_last_order_id",
+    LAST_ORDER_TEXT: "vf_last_order_text",
+    MOBILE: "vf_mobile",
+    EMAIL: "vf_email"
+  };
 
   let allProducts = [];
   let cart = [];
   let paymentOk = false;
   let lastPaymentRef = null;
 
-  async function loadWeather() {
-    try {
-      const url = "https://api.open-meteo.com/v1/forecast?latitude=53.3498&longitude=-6.2603&current=temperature_2m,weather_code&timezone=Europe%2FDublin";
-      const r = await fetch(url);
-      const j = await r.json();
-      const t = j?.current?.temperature_2m;
-      document.getElementById("weatherPill").textContent = `🌦️ Dublin: ${t}°C — Try Jackets & Hoodies`;
-    } catch (e) {
-      document.getElementById("weatherPill").textContent = "🌦️ Weather unavailable";
+  async function detectApiBase(){
+    const candidates = [
+      window.location.origin,
+      `${window.location.protocol}//${window.location.hostname}:5000`,
+      `${window.location.protocol}//${window.location.hostname}:8080`
+    ];
+
+    for (const base of candidates){
+      try{
+        const r = await fetch(`${base}/products`, { method: "GET" });
+        const ct = (r.headers.get("content-type") || "").toLowerCase();
+        if (r.ok && ct.includes("application/json")){
+          API_BASE = base;
+          return;
+        }
+      }catch(e){}
     }
   }
+
+  const api = (path) => `${API_BASE}/${String(path).replace(/^\/+/, "")}`;
 
   function setStatus(el, msg, ok=true){
     const box = document.getElementById(el);
@@ -263,6 +219,82 @@
     }[m]));
   }
 
+  function saveJSON(key, value){
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function loadJSON(key, fallback){
+    try{
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    }catch(e){
+      return fallback;
+    }
+  }
+
+  function saveCart(){
+    saveJSON(STORE.CART, cart);
+  }
+
+  function loadCart(){
+    cart = loadJSON(STORE.CART, []);
+    if(!Array.isArray(cart)) cart = [];
+  }
+
+  function savePaymentState(){
+    localStorage.setItem(STORE.PAYMENT_OK, paymentOk ? "1" : "0");
+    if(lastPaymentRef) localStorage.setItem(STORE.PAYMENT_REF, lastPaymentRef);
+    else localStorage.removeItem(STORE.PAYMENT_REF);
+  }
+
+  function loadPaymentState(){
+    paymentOk = localStorage.getItem(STORE.PAYMENT_OK) === "1";
+    lastPaymentRef = localStorage.getItem(STORE.PAYMENT_REF);
+  }
+
+  function clearPaymentStorage(){
+    localStorage.removeItem(STORE.PAYMENT_OK);
+    localStorage.removeItem(STORE.PAYMENT_REF);
+    localStorage.removeItem(STORE.PAYMENT_AMOUNT);
+    localStorage.removeItem(STORE.PAYMENT_PENDING);
+    localStorage.removeItem(STORE.PAYMENT_CART_SNAPSHOT);
+  }
+
+  function resetPaymentState(){
+    paymentOk = false;
+    lastPaymentRef = null;
+    clearPaymentStorage();
+    document.getElementById("orderBtn").disabled = true;
+    document.getElementById("confirmPayBtn").disabled = true;
+    setStatus("paymentStatus", "No payment yet.", true);
+  }
+
+  async function loadWeather(){
+    try{
+      setStatus("weatherStatus", "Loading Dublin weather...", true);
+
+      const r = await fetch(api("weather"));
+      if(!r.ok) throw new Error(`HTTP ${r.status} ${await r.text()}`);
+
+      const j = await r.json();
+
+      const temp = j?.current?.temperature_2m ?? "-";
+      const wind = j?.current?.wind_speed_10m ?? "-";
+      const code = j?.current?.weather_code ?? "-";
+      const time = j?.current?.time ?? "-";
+      const unitTemp = j?.current_units?.temperature_2m || "°C";
+      const unitWind = j?.current_units?.wind_speed_10m || "km/h";
+
+      setStatus(
+        "weatherStatus",
+        `Dublin Weather ✅\nTemperature: ${temp} ${unitTemp}\nWind: ${wind} ${unitWind}\nWeather code: ${code}\nTime: ${time}`,
+        true
+      );
+    }catch(e){
+      setStatus("weatherStatus", `Weather load failed: ${e}`, false);
+    }
+  }
+
   function renderProducts(list){
     const q = (document.getElementById("q").value || "").toLowerCase().trim();
     const filtered = !q ? list : list.filter(p =>
@@ -272,11 +304,13 @@
 
     const root = document.getElementById("products");
     root.innerHTML = "";
+
     filtered.forEach(p => {
       const el = document.createElement("div");
       el.className = "item";
       el.onclick = () => fillForm(p);
-      const initials = (p.name || "Item").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase();
+
+      const initials = (p.name || "Item").split(" ").map(x => x[0]).slice(0,2).join("").toUpperCase();
 
       el.innerHTML = `
         <div class="thumb">${initials}</div>
@@ -288,7 +322,6 @@
             <button class="secondary" onclick="event.stopPropagation(); addToCart('${p.productId}')">Add to cart</button>
             <button class="danger" onclick="event.stopPropagation(); deleteProduct('${p.productId}')">Delete</button>
           </div>
-          <div class="muted small" style="margin-top:6px">ID: ${escapeHtml(p.productId || "")}</div>
         </div>
       `;
       root.appendChild(el);
@@ -336,7 +369,8 @@
     }
 
     const payload = {
-      name, category,
+      name,
+      category,
       price: Number(price),
       stock: Number(stock || 0),
       sizes: ["S","M","L","XL"]
@@ -357,6 +391,7 @@
           body: JSON.stringify(payload)
         });
       }
+
       if(!r.ok) throw new Error(`HTTP ${r.status} ${await r.text()}`);
       const saved = await r.json();
       setStatus("productStatus", `Saved ✅ ${saved.productId}`, true);
@@ -370,7 +405,7 @@
   async function deleteProduct(id){
     if(!confirm("Delete this product?")) return;
     try{
-      const r = await fetch(api(`products/${id}`), {method:"DELETE"});
+      const r = await fetch(api(`products/${id}`), { method:"DELETE" });
       if(!r.ok) throw new Error(`HTTP ${r.status}`);
       setStatus("productStatus", `Deleted ✅ ${id}`, true);
       await loadProducts();
@@ -379,28 +414,8 @@
     }
   }
 
-  function addToCart(productId){
-    const p = allProducts.find(x => x.productId === productId);
-    if(!p) return;
-    const existing = cart.find(x => x.productId === productId);
-    if(existing) existing.qty += 1;
-    else cart.push({productId, name:p.name, price:Number(p.price||0), qty:1});
-    renderCart();
-
-    // Payment must be redone if cart changes
-    paymentOk = false;
-    lastPaymentRef = null;
-    document.getElementById("orderBtn").disabled = true;
-    setStatus("paymentStatus", "Cart changed. Please pay again.", false);
-  }
-
-  function clearCart(){
-    cart = [];
-    renderCart();
-    paymentOk = false;
-    lastPaymentRef = null;
-    document.getElementById("orderBtn").disabled = true;
-    setStatus("paymentStatus", "No payment yet.", true);
+  function cartTotal(){
+    return cart.reduce((s,i) => s + i.price * i.qty, 0);
   }
 
   function renderCart(){
@@ -409,96 +424,145 @@
       box.textContent = "Cart is empty.";
       return;
     }
-    const total = cart.reduce((s,i)=> s + i.price*i.qty, 0);
-    box.innerHTML = cart.map(i => `
-      <div class="cartRow">
-        <div>${escapeHtml(i.name)} <span class="muted">x${i.qty}</span></div>
-        <div>€ ${(i.price*i.qty).toFixed(2)}</div>
-      </div>
-    `).join("") + `<div class="divider"></div><div class="cartRow"><b>Total</b><b>€ ${total.toFixed(2)}</b></div>`;
+
+    const total = cartTotal();
+
+    box.innerHTML =
+      cart.map(i => `
+        <div class="cartRow">
+          <div>${escapeHtml(i.name)} <span class="muted">x${i.qty}</span></div>
+          <div>€ ${(i.price * i.qty).toFixed(2)}</div>
+        </div>
+      `).join("") +
+      `<div class="divider"></div><div class="cartRow"><b>Total</b><b>€ ${total.toFixed(2)}</b></div>`;
   }
 
-  function cartTotal(){
-    return cart.reduce((s,i)=> s + i.price*i.qty, 0);
+  function invalidatePaymentBecauseCartChanged(){
+    const hadPayment = paymentOk || localStorage.getItem(STORE.PAYMENT_PENDING) === "1";
+    paymentOk = false;
+    lastPaymentRef = null;
+    clearPaymentStorage();
+    document.getElementById("orderBtn").disabled = true;
+    document.getElementById("confirmPayBtn").disabled = true;
+
+    if(hadPayment){
+      setStatus("paymentStatus", "Cart changed. Please pay again.", false);
+    }else{
+      setStatus("paymentStatus", "Cart updated. Please make payment.", true);
+    }
   }
 
-  // ✅ Payment step (Classmate API)
-  async function payNow(){
+  function addToCart(productId){
+    const p = allProducts.find(x => x.productId === productId);
+    if(!p) return;
+
+    const existing = cart.find(x => x.productId === productId);
+    if(existing) existing.qty += 1;
+    else cart.push({ productId, name:p.name, price:Number(p.price || 0), qty:1 });
+
+    saveCart();
+    renderCart();
+    invalidatePaymentBecauseCartChanged();
+  }
+
+  function clearCart(){
+    cart = [];
+    saveCart();
+    renderCart();
+    resetPaymentState();
+  }
+
+  function markPaymentSuccess(ref, amountStr){
+    paymentOk = true;
+    lastPaymentRef = ref || lastPaymentRef || `pay_${Date.now()}`;
+    savePaymentState();
+
+    if(amountStr){
+      localStorage.setItem(STORE.PAYMENT_AMOUNT, String(amountStr));
+    }
+
+    document.getElementById("orderBtn").disabled = false;
+    document.getElementById("confirmPayBtn").disabled = false;
+
+    const shownAmount =
+      amountStr ||
+      localStorage.getItem(STORE.PAYMENT_AMOUNT) ||
+      cartTotal().toFixed(2);
+
+    setStatus("paymentStatus", `Payment SUCCESS ✅\nAmount: € ${shownAmount}\nRef: ${lastPaymentRef}`, true);
+  }
+
+  function confirmPaymentDone(){
+    const expectedAmount =
+      localStorage.getItem(STORE.PAYMENT_AMOUNT) ||
+      cartTotal().toFixed(2);
+
+    markPaymentSuccess(null, expectedAmount);
+    localStorage.removeItem(STORE.PAYMENT_PENDING);
+  }
+
+  function payNow(){
     if(cart.length === 0){
       setStatus("paymentStatus", "Add items to cart first.", false);
       return;
     }
+
     const mobile = document.getElementById("mobile").value.trim();
     if(!mobile){
-      setStatus("paymentStatus", "Enter mobile number first (e.g., +35389001234).", false);
-      return;
-    }
-
-    const amount = Number(cartTotal().toFixed(2));
-    const payBtn = document.getElementById("payBtn");
-    payBtn.disabled = true;
-    setStatus("paymentStatus", `Processing payment…\nMobile: ${mobile}\nAmount: € ${amount}`, true);
-
-    try{
-      const r = await fetch(CLASSMATE_API_URL, {
-        method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ mobile, amount })
-      });
-
-      const text = await r.text();
-      let j = null;
-      try { j = JSON.parse(text); } catch(_) {}
-
-      if(!r.ok){
-        throw new Error(`HTTP ${r.status}\n${text}`);
-      }
-
-      // ✅ UPDATED SUCCESS RULE (supports SUCCEEDED)
-      const success =
-        j && (j.status === "SUCCEEDED" || j.status === "SUCCESS" || j.status === "OK" || j.ok === true);
-
-      if(!success){
-        throw new Error(`Payment response not marked successful:\n${text}`);
-      }
-
-      paymentOk = true;
-      lastPaymentRef = (j && (j.paymentId || j.txnId || j.reference)) || null;
-
-      document.getElementById("orderBtn").disabled = false;
-      setStatus(
-        "paymentStatus",
-        `Payment SUCCESS ✅\nAmount: € ${amount}\nRef: ${lastPaymentRef || "(not provided by API)"}`,
-        true
-      );
-    }catch(e){
-      paymentOk = false;
-      lastPaymentRef = null;
-      document.getElementById("orderBtn").disabled = true;
-      setStatus("paymentStatus", `Payment failed ❌\n${e}`, false);
-    }finally{
-      payBtn.disabled = false;
-    }
-  }
-
-  // ✅ Checkout only if paymentOk
-  async function checkout(){
-    if(cart.length === 0){
-      document.getElementById("orderStatus").textContent = "Add items to cart first.";
-      return;
-    }
-    if(!paymentOk){
-      document.getElementById("orderStatus").textContent = "Please complete payment first.";
+      setStatus("paymentStatus", "Enter mobile number first.", false);
       return;
     }
 
     const email = document.getElementById("email").value.trim();
-    const items = cart.map(i => ({productId:i.productId, qty:i.qty}));
+    const amount = Number(cartTotal().toFixed(2));
+
+    localStorage.setItem(STORE.MOBILE, mobile);
+    localStorage.setItem(STORE.EMAIL, email);
+    localStorage.setItem(STORE.PAYMENT_AMOUNT, amount.toFixed(2));
+    localStorage.setItem(STORE.PAYMENT_PENDING, "1");
+    saveJSON(STORE.PAYMENT_CART_SNAPSHOT, cart);
+    saveCart();
+
+    const returnUrl = new URL(window.location.href);
+    returnUrl.search = "";
+    returnUrl.hash = "";
+    returnUrl.searchParams.set("paid", "1");
+
+    const payUrl =
+      `${CLASSMATE_PAYMENT_BASE}?` +
+      `mobile=${encodeURIComponent(mobile)}` +
+      `&amount=${encodeURIComponent(amount.toFixed(2))}` +
+      `&redirect=${encodeURIComponent(returnUrl.toString())}`;
+
+    document.getElementById("confirmPayBtn").disabled = false;
+
+    setStatus(
+      "paymentStatus",
+      `Redirecting to payment page...\nMobile: ${mobile}\nAmount: € ${amount.toFixed(2)}`,
+      true
+    );
+
+    window.location.href = payUrl;
+  }
+
+  async function checkout(){
+    if(cart.length === 0){
+      setStatus("orderStatus", "Add items to cart first.", false);
+      return;
+    }
+
+    if(!paymentOk){
+      setStatus("orderStatus", "Please complete payment first.", false);
+      return;
+    }
+
+    const email = document.getElementById("email").value.trim();
+    const items = cart.map(i => ({ productId:i.productId, qty:i.qty }));
 
     try{
       const r = await fetch(api("orders"), {
         method:"POST",
-        headers: {"Content-Type":"application/json"},
+        headers: { "Content-Type":"application/json" },
         body: JSON.stringify({
           items,
           email,
@@ -506,44 +570,125 @@
           paymentRef: lastPaymentRef
         })
       });
-      if(!r.ok) throw new Error(`HTTP ${r.status} ${await r.text()}`);
-      const j = await r.json();
-      document.getElementById("orderId").value = j.orderId;
-      document.getElementById("orderStatus").textContent =
-        `Order created ✅\norderId: ${j.orderId}\nstatus: ${j.status}\n\nNow you can check status below.`;
 
-      clearCart();
-      paymentOk = false;
-      lastPaymentRef = null;
-      document.getElementById("orderBtn").disabled = true;
-      setStatus("paymentStatus", "No payment yet.", true);
+      if(!r.ok) throw new Error(`HTTP ${r.status} ${await r.text()}`);
+
+      const j = await r.json();
+      const orderText =
+        `Order created ✅\norderId: ${j.orderId}\nstatus: ${j.status}\nSQS Sent: ${j.sqsSent}\n\nNow you can check status below.`;
+
+      document.getElementById("orderId").value = j.orderId;
+      setStatus("orderStatus", orderText, true);
+
+      localStorage.setItem(STORE.LAST_ORDER_ID, j.orderId);
+      localStorage.setItem(STORE.LAST_ORDER_TEXT, orderText);
+
+      cart = [];
+      saveCart();
+      renderCart();
+      resetPaymentState();
+
     }catch(e){
-      document.getElementById("orderStatus").textContent = `Checkout failed: ${e}`;
+      setStatus("orderStatus", `Checkout failed: ${e}`, false);
     }
   }
 
   async function checkOrder(){
     const orderId = document.getElementById("orderId").value.trim();
     if(!orderId){
-      document.getElementById("orderStatus").textContent = "Paste an orderId first.";
+      setStatus("orderStatus", "Paste an orderId first.", false);
       return;
     }
+
     try{
       const r = await fetch(api(`orders/${orderId}`));
       if(!r.ok) throw new Error(`HTTP ${r.status} ${await r.text()}`);
       const j = await r.json();
-      document.getElementById("orderStatus").textContent = JSON.stringify(j, null, 2);
+      const text = JSON.stringify(j, null, 2);
+
+      document.getElementById("orderStatus").textContent = text;
+      document.getElementById("orderStatus").classList.remove("bad");
+      document.getElementById("orderStatus").classList.add("ok");
+
+      localStorage.setItem(STORE.LAST_ORDER_ID, orderId);
+      localStorage.setItem(STORE.LAST_ORDER_TEXT, text);
     }catch(e){
-      document.getElementById("orderStatus").textContent = `Order fetch failed: ${e}`;
+      setStatus("orderStatus", `Order fetch failed: ${e}`, false);
+    }
+  }
+
+  function restoreSavedState(){
+    loadCart();
+    loadPaymentState();
+    renderCart();
+
+    document.getElementById("mobile").value = localStorage.getItem(STORE.MOBILE) || "";
+    document.getElementById("email").value = localStorage.getItem(STORE.EMAIL) || "";
+
+    const savedOrderId = localStorage.getItem(STORE.LAST_ORDER_ID) || "";
+    const savedOrderText = localStorage.getItem(STORE.LAST_ORDER_TEXT) || "";
+
+    if(savedOrderId){
+      document.getElementById("orderId").value = savedOrderId;
+    }
+
+    if(savedOrderText){
+      document.getElementById("orderStatus").textContent = savedOrderText;
+      document.getElementById("orderStatus").classList.remove("bad");
+      document.getElementById("orderStatus").classList.add("ok");
+    }
+
+    if(paymentOk){
+      const amount = localStorage.getItem(STORE.PAYMENT_AMOUNT) || cartTotal().toFixed(2);
+      document.getElementById("orderBtn").disabled = false;
+      document.getElementById("confirmPayBtn").disabled = false;
+      setStatus("paymentStatus", `Payment SUCCESS ✅\nAmount: € ${amount}\nRef: ${lastPaymentRef || "-"}`, true);
+      return;
+    }
+
+    if(localStorage.getItem(STORE.PAYMENT_PENDING) === "1"){
+      const amount = localStorage.getItem(STORE.PAYMENT_AMOUNT) || cartTotal().toFixed(2);
+      document.getElementById("orderBtn").disabled = true;
+      document.getElementById("confirmPayBtn").disabled = false;
+      setStatus("paymentStatus", `Payment page was opened.\nIf payment is completed, click "I Completed Payment".\nAmount: € ${amount}`, true);
+      return;
+    }
+
+    document.getElementById("orderBtn").disabled = true;
+    document.getElementById("confirmPayBtn").disabled = true;
+    setStatus("paymentStatus", "No payment yet.", true);
+  }
+
+  function handleReturnFromPayment(){
+    const url = new URL(window.location.href);
+    const paid = url.searchParams.get("paid");
+
+    if(paid === "1"){
+      const amount = localStorage.getItem(STORE.PAYMENT_AMOUNT) || cartTotal().toFixed(2);
+      markPaymentSuccess(null, amount);
+      localStorage.removeItem(STORE.PAYMENT_PENDING);
+
+      url.searchParams.delete("paid");
+      window.history.replaceState({}, "", url.toString());
     }
   }
 
   document.getElementById("q").addEventListener("input", () => renderProducts(allProducts));
 
-  // initial load
-  loadWeather();
-  loadProducts();
-  renderCart();
+  document.getElementById("mobile").addEventListener("input", (e) => {
+    localStorage.setItem(STORE.MOBILE, e.target.value);
+  });
+
+  document.getElementById("email").addEventListener("input", (e) => {
+    localStorage.setItem(STORE.EMAIL, e.target.value);
+  });
+
+  (async () => {
+    await detectApiBase();
+    restoreSavedState();
+    handleReturnFromPayment();
+    await loadProducts();
+  })();
 </script>
 </body>
 </html>
