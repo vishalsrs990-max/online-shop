@@ -8,18 +8,12 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - "backend/**"
-      - ".github/workflows/deploy-eb.yml"
-
-permissions:
-  contents: read
-  id-token: write
 
 env:
   AWS_REGION: us-east-1
   EB_APP_NAME: backend
   EB_ENV_NAME: online-shopping-env
+  APP_URL: http://online-shopping-env.eba-akqvmicz.us-east-1.elasticbeanstalk.com
 
 jobs:
   sonar:
@@ -70,7 +64,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Verify AWS identity
@@ -93,11 +89,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "Waiting for environment to become Ready..."
           aws elasticbeanstalk wait environment-updated \
             --environment-names "$EB_ENV_NAME" \
             --region "$AWS_REGION"
-          echo "Environment is Ready"
 
       - name: CD - Upload bundle and deploy to Elastic Beanstalk
         shell: bash
@@ -112,10 +106,6 @@ jobs:
             --output text)
 
           KEY="${EB_APP_NAME}/${VERSION_LABEL}.zip"
-
-          echo "Deploying version: $VERSION_LABEL"
-          echo "Using bucket: $BUCKET"
-          echo "Using key: $KEY"
 
           aws s3 cp deploy.zip "s3://${BUCKET}/${KEY}" --region "$AWS_REGION"
 
@@ -134,4 +124,6 @@ jobs:
             --environment-names "$EB_ENV_NAME" \
             --region "$AWS_REGION"
 
-          echo "Deployment completed successfully"
+      - name: Post-deploy health check
+        run: |
+          curl -f "${APP_URL}/health"
