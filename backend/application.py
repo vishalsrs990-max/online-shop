@@ -22,8 +22,12 @@ QUEUE_URL = os.environ.get("QUEUE_URL", "").strip()
 QUEUE_NAME = os.environ.get("QUEUE_NAME", "").strip()
 ASSETS_BUCKET = os.environ.get("ASSETS_BUCKET", "").strip()
 
+# NEW: SNS topic ARN for email notifications
+SNS_TOPIC_ARN = os.environ.get("SNS_TOPIC_ARN", "").strip()
+
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 sqs = boto3.client("sqs", region_name=AWS_REGION)
+sns = boto3.client("sns", region_name=AWS_REGION)   # NEW
 
 products_tbl = dynamodb.Table(PRODUCTS_TABLE)
 orders_tbl = dynamodb.Table(ORDERS_TABLE)
@@ -33,6 +37,7 @@ print("PRODUCTS_TABLE =", PRODUCTS_TABLE)
 print("ORDERS_TABLE =", ORDERS_TABLE)
 print("QUEUE_URL =", QUEUE_URL if QUEUE_URL else "(empty)")
 print("QUEUE_NAME =", QUEUE_NAME if QUEUE_NAME else "(empty)")
+print("SNS_TOPIC_ARN =", SNS_TOPIC_ARN if SNS_TOPIC_ARN else "(empty)")
 
 
 def to_json_safe(obj):
@@ -56,6 +61,10 @@ def is_valid_sqs_queue_url(url: str) -> bool:
         and parts[3] != ""
         and parts[4] != ""
     )
+
+
+def is_valid_sns_topic_arn(arn: str) -> bool:
+    return arn.startswith("arn:aws:sns:") and len(arn.split(":")) >= 6
 
 
 def resolve_queue_url():
@@ -118,6 +127,51 @@ def send_order_to_sqs(order):
         return False
 
 
+# NEW: SNS email notification helper
+def send_order_email_notification(order):
+    if not SNS_TOPIC_ARN:
+        print("⚠️ SNS_TOPIC_ARN not configured → skipping SNS notification")
+        return False
+
+    if not is_valid_sns_topic_arn(SNS_TOPIC_ARN):
+        print("⚠️ SNS_TOPIC_ARN looks invalid:", SNS_TOPIC_ARN)
+        return False
+
+    try:
+        message = {
+            "event": "ORDER_CREATED",
+            "orderId": order["orderId"],
+            "status": order.get("status", ""),
+            "email": order.get("email", ""),
+            "paymentStatus": order.get("paymentStatus", ""),
+            "paymentRef": order.get("paymentRef", ""),
+            "items": order.get("items", []),
+            "createdAt": order.get("createdAt", 0)
+        }
+
+        resp = sns.publish(
+            TopicArn=SNS_TOPIC_ARN,
+            Subject=f"New Order Created - {order['orderId'][:8]}",
+            Message=json.dumps(message, indent=2),
+            MessageAttributes={
+                "eventType": {
+                    "DataType": "String",
+                    "StringValue": "ORDER_CREATED"
+                }
+            }
+        )
+
+        print("✅ SNS notification sent:", resp.get("MessageId"))
+        return True
+
+    except ClientError as e:
+        print("❌ SNS publish failed:", e.response["Error"]["Message"])
+        return False
+    except Exception as e:
+        print("❌ SNS publish failed:", str(e))
+        return False
+
+
 @application.get("/")
 def home():
     return application.send_static_file("index.html")
@@ -130,7 +184,8 @@ def health():
         "region": AWS_REGION,
         "productsTable": PRODUCTS_TABLE,
         "ordersTable": ORDERS_TABLE,
-        "queueConfigured": bool(resolve_queue_url())
+        "queueConfigured": bool(resolve_queue_url()),
+        "snsConfigured": bool(is_valid_sns_topic_arn(SNS_TOPIC_ARN))
     })
 
 
@@ -264,6 +319,11 @@ def create_order():
 
     sqs_sent = send_order_to_sqs(order)
 
+    # NEW: publish order details to SNS topic for email notification
+    sns_sent = send_order_email_notification(order)
+    print("SNS notification status:", sns_sent)
+
+    # Keeping your response format same so existing frontend will not break
     return jsonify({
         "orderId": order_id,
         "status": "PENDING",
@@ -286,4 +346,8 @@ def not_found(e):
 
 
 if __name__ == "__main__":
-    application.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8080")), debug=True)
+    application.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", "8080")),
+        debug=True
+    )
